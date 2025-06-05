@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visualisasi Interaktif Algoritma Pengurutan</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chosen Palette: Warm Neutrals with Subtle Accents -->
+    <!-- Application Structure Plan: A dashboard-style single-page application with a primary navigation to select different sorting algorithms. Selecting an algorithm dynamically updates the main content area, which includes a detailed description, complexity analysis, pros/cons, use cases, and an interactive canvas visualization of the sorting process. This structure was chosen over a linear report format to promote user-driven exploration and direct comparison, making the dense information more digestible and engaging. -->
+    <!-- Visualization & Content Choices: Report Info: Algorithm concepts, complexities, stability. Goal: Inform, Compare, Engage. Viz/Presentation: Interactive buttons for selection, dynamic text blocks for info, and a custom HTML Canvas animation to visualize the sorting process. Interaction: User selects algorithm, clicks 'Sort' to see animation on a random array. Justification: Animation makes abstract algorithms concrete. Direct selection and comparison aids learning. Library/Method: Vanilla JS for logic and Canvas API for visualization. CONFIRMING NO SVG/Mermaid. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            height: 300px;
+            max-height: 40vh;
+        }
+        canvas {
+            background-color: #f8fafc;
+            border-radius: 0.5rem;
+            border: 1px solid #e2e8f0;
+        }
+        .nav-button.active {
+            background-color: #4f46e5;
+            color: white;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        }
+    </style>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body class="bg-slate-50 text-slate-800">
+
+    <div class="min-h-screen container mx-auto px-4 py-8">
+        <header class="text-center mb-8">
+            <h1 class="text-4xl font-bold text-slate-900">Dasbor Algoritma Pengurutan</h1>
+            <p class="mt-2 text-lg text-slate-600">Jelajahi, bandingkan, dan visualisasikan cara kerja algoritma pengurutan populer.</p>
+        </header>
+
+        <main>
+            <section id="intro" class="mb-12 bg-white p-6 rounded-lg shadow-sm">
+                <h2 class="text-2xl font-semibold mb-3 text-slate-900">Mengapa Algoritma Pengurutan Penting?</h2>
+                <p class="text-slate-700 leading-relaxed">
+                    Pengurutan data adalah operasi fundamental dalam ilmu komputer untuk mengatur informasi agar mudah diakses. Data yang terurut memungkinkan operasi lain seperti pencarian menjadi jauh lebih cepat dan efisien. Banyak sistem modern, dari basis data hingga mesin pencari, bergantung pada algoritma pengurutan yang efisien untuk beroperasi secara optimal. Aplikasi ini dirancang untuk membantu Anda memahami perbedaan, kekuatan, dan kelemahan dari beberapa algoritma yang paling umum digunakan.
+                </p>
+            </section>
+
+            <section id="interactive-dashboard" class="bg-white p-6 rounded-lg shadow-sm">
+                <div class="mb-6">
+                    <h3 class="text-xl font-semibold text-slate-900 mb-4">Pilih Algoritma untuk Dijelajahi:</h3>
+                    <nav id="algo-nav" class="flex flex-wrap gap-2 justify-center">
+                    </nav>
+                </div>
+
+                <div id="algo-display" class="grid md:grid-cols-2 gap-8 items-start">
+                    <div id="visualization-container" class="w-full">
+                        <div class="chart-container mx-auto">
+                            <canvas id="sort-canvas"></canvas>
+                        </div>
+                        <div class="flex flex-wrap gap-2 justify-center mt-4">
+                            <button id="sort-btn" class="bg-indigo-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-indigo-700 transition-colors duration-200 shadow">Urutkan</button>
+                            <button id="reset-btn" class="bg-slate-200 text-slate-800 font-semibold py-2 px-4 rounded-lg hover:bg-slate-300 transition-colors duration-200">Reset Array</button>
+                        </div>
+                    </div>
+                    
+                    <div id="algo-details" class="flex flex-col gap-4">
+                        <h2 id="algo-title" class="text-3xl font-bold text-slate-900"></h2>
+                        <p id="algo-concept" class="text-slate-600 leading-relaxed"></p>
+                        
+                        <div class="bg-slate-100 p-4 rounded-lg">
+                            <h4 class="font-semibold text-lg mb-2 text-slate-800">Analisis Kinerja</h4>
+                            <div class="grid grid-cols-2 gap-4 text-sm">
+                                <div>
+                                    <p class="font-medium text-slate-500">Kompleksitas Waktu</p>
+                                    <p id="time-complexity" class="font-mono text-indigo-700"></p>
+                                </div>
+                                <div>
+                                    <p class="font-medium text-slate-500">Kompleksitas Ruang</p>
+                                    <p id="space-complexity" class="font-mono text-indigo-700"></p>
+                                </div>
+                                <div>
+                                    <p class="font-medium text-slate-500">Stabilitas</p>
+                                    <p id="stability" class="font-semibold"></p>
+                                </div>
+                                <div>
+                                    <p class="font-medium text-slate-500">In-place?</p>
+                                    <p id="in-place" class="font-semibold"></p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="grid md:grid-cols-2 gap-4">
+                            <div class="bg-green-50 p-4 rounded-lg border border-green-200">
+                                <h4 class="font-semibold text-green-800 mb-2">Kelebihan</h4>
+                                <ul id="algo-pros" class="list-disc list-inside text-green-700 space-y-1 text-sm"></ul>
+                            </div>
+                            <div class="bg-red-50 p-4 rounded-lg border border-red-200">
+                                <h4 class="font-semibold text-red-800 mb-2">Kekurangan</h4>
+                                <ul id="algo-cons" class="list-disc list-inside text-red-700 space-y-1 text-sm"></ul>
+                            </div>
+                        </div>
+
+                        <div class="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                            <h4 class="font-semibold text-blue-800 mb-2">Kasus Penggunaan Umum</h4>
+                            <p id="algo-usecases" class="text-blue-700 text-sm leading-relaxed"></p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <footer class="text-center mt-12 py-4 border-t border-slate-200">
+            <p class="text-sm text-slate-500">Dibangun berdasarkan Laporan Analisis Algoritma Pengurutan. Dibuat dengan cinta untuk pembelajaran.</p>
+        </footer>
+    </div>
+
+    <script>
+        const ALGO_DATA = {
+            'Bubble Sort': {
+                concept: 'Algoritma sederhana yang berulang kali membandingkan elemen berdekatan dan menukarnya jika urutannya salah. Elemen yang lebih besar secara bertahap "menggelembung" ke posisi akhirnya.',
+                time: 'O(n²)',
+                space: 'O(1)',
+                stability: 'Stabil',
+                inplace: 'Ya',
+                pros: ['Sangat mudah dipahami dan diimplementasikan', 'Stabil', 'Membutuhkan memori konstan (in-place)'],
+                cons: ['Sangat tidak efisien untuk dataset besar', 'Banyak operasi pertukaran yang tidak perlu', 'Performa buruk di hardware modern'],
+                usecases: 'Terutama digunakan untuk tujuan edukasi. Dapat berguna untuk mendeteksi kesalahan kecil pada array yang hampir terurut.',
+                sort: bubbleSort
+            },
+            'Selection Sort': {
+                concept: 'Bekerja dengan membagi array menjadi dua bagian: terurut dan tidak terurut. Secara berulang memilih elemen terkecil dari bagian tidak terurut dan menukarnya dengan elemen pertama dari bagian tidak terurut.',
+                time: 'O(n²)',
+                space: 'O(1)',
+                stability: 'Tidak Stabil',
+                inplace: 'Ya',
+                pros: ['Sederhana untuk diimplementasikan', 'Jumlah pertukaran minimal (satu per pass)', 'Efisiensi memori (in-place)'],
+                cons: ['Tidak efisien untuk dataset besar', 'Performa tidak membaik pada data yang sudah terurut'],
+                usecases: 'Baik untuk dataset kecil atau saat biaya penulisan memori sangat tinggi (misalnya, pada flash memory).',
+                sort: selectionSort
+            },
+            'Insertion Sort': {
+                concept: 'Membangun array terurut satu elemen pada satu waktu. Mengambil elemen dari bagian tidak terurut dan menyisipkannya ke posisi yang benar di bagian yang sudah terurut.',
+                time: 'O(n) - O(n²)',
+                space: 'O(1)',
+                stability: 'Stabil',
+                inplace: 'Ya',
+                pros: ['Sangat efisien untuk dataset kecil', 'Performa mendekati O(n) untuk data yang hampir terurut', 'Stabil dan in-place'],
+                cons: ['Tidak efisien untuk dataset besar', 'Banyak operasi pergeseran elemen'],
+                usecases: 'Sering digunakan sebagai bagian dari algoritma hibrida (seperti Timsort) untuk mengurutkan sub-array kecil. Baik untuk pengurutan online.',
+                sort: insertionSort
+            },
+            'Merge Sort': {
+                concept: 'Algoritma "divide and conquer". Secara rekursif membagi array menjadi dua hingga setiap sub-array hanya berisi satu elemen, lalu menggabungkannya kembali dalam urutan yang benar.',
+                time: 'O(n log n)',
+                space: 'O(n)',
+                stability: 'Stabil',
+                inplace: 'Tidak',
+                pros: ['Performa konsisten O(n log n) di semua kasus', 'Stabil', 'Sangat baik untuk mengurutkan linked list'],
+                cons: ['Membutuhkan memori tambahan O(n)', 'Lebih lambat dari algoritma lain untuk dataset kecil'],
+                usecases: 'Ideal untuk pengurutan dataset besar, pengurutan eksternal (data tidak muat di memori), dan saat stabilitas diperlukan.',
+                sort: mergeSort
+            },
+            'Quick Sort': {
+                concept: 'Algoritma "divide and conquer" yang memilih elemen sebagai "pivot" dan mempartisi array di sekitarnya. Semua elemen yang lebih kecil dari pivot diletakkan sebelum pivot, dan yang lebih besar setelahnya.',
+                time: 'O(n log n) - O(n²)',
+                space: 'O(log n)',
+                stability: 'Tidak Stabil',
+                inplace: 'Ya',
+                pros: ['Sangat cepat pada kasus rata-rata', 'In-place (membutuhkan ruang O(log n) untuk stack)', 'Cache-friendly'],
+                cons: ['Performa terburuk O(n²) jika pivot dipilih dengan buruk', 'Tidak stabil'],
+                usecases: 'Salah satu algoritma pengurutan serba guna yang paling banyak digunakan. Digunakan di banyak pustaka standar bahasa pemrograman.',
+                sort: quickSort
+            },
+            'Heap Sort': {
+                concept: 'Menggunakan struktur data heap biner. Pertama, membangun max-heap dari data. Kemudian, berulang kali mengekstrak elemen terbesar dari heap (root) dan menempatkannya di akhir array.',
+                time: 'O(n log n)',
+                space: 'O(1)',
+                stability: 'Tidak Stabil',
+                inplace: 'Ya',
+                pros: ['Performa O(n log n) yang terjamin di semua kasus', 'In-place dengan efisiensi memori O(1)'],
+                cons: ['Tidak stabil', 'Bisa lebih lambat dalam praktik daripada Quick Sort karena cache locality yang buruk'],
+                usecases: 'Pilihan yang baik saat jaminan performa terburuk diperlukan. Digunakan dalam implementasi priority queue dan beberapa algoritma graf.',
+                sort: heapSort
+            },
+        };
+
+        const canvas = document.getElementById('sort-canvas');
+        const ctx = canvas.getContext('2d');
+        const sortBtn = document.getElementById('sort-btn');
+        const resetBtn = document.getElementById('reset-btn');
+        const algoNav = document.getElementById('algo-nav');
+
+        let array = [];
+        let currentAlgorithm = 'Bubble Sort';
+        let isSorting = false;
+        const arraySize = 30;
+        const animationSpeed = 25; // in ms
+
+        function setupCanvas() {
+            const container = canvas.parentElement;
+            canvas.width = container.offsetWidth;
+            canvas.height = container.offsetHeight;
+        }
+
+        function generateArray() {
+            array = [];
+            for (let i = 0; i < arraySize; i++) {
+                array.push(Math.floor(Math.random() * (canvas.height - 20)) + 10);
+            }
+        }
+
+        function drawArray(arr, highlightedIndices = {}) {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            const barWidth = canvas.width / arr.length;
+            
+            for (let i = 0; i < arr.length; i++) {
+                const barHeight = arr[i];
+                const x = i * barWidth;
+                const y = canvas.height - barHeight;
+
+                if(highlightedIndices.sorted && i >= arr.length - highlightedIndices.sortedIndex) {
+                    ctx.fillStyle = '#4ade80'; // Green for sorted
+                } else if (highlightedIndices.comparing && (i === highlightedIndices.i || i === highlightedIndices.j)) {
+                    ctx.fillStyle = '#facc15'; // Yellow for comparing
+                } else if (highlightedIndices.swapping && (i === highlightedIndices.i || i === highlightedIndices.j)) {
+                    ctx.fillStyle = '#f87171'; // Red for swapping
+                } else if (highlightedIndices.pivot && i === highlightedIndices.pivot) {
+                     ctx.fillStyle = '#a78bfa'; // Purple for pivot
+                }
+                 else {
+                    ctx.fillStyle = '#60a5fa'; // Blue for normal
+                }
+                
+                ctx.fillRect(x, y, barWidth - 2, barHeight);
+            }
+        }
+        
+        function sleep(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+        async function updateAndDraw(arr, highlights) {
+            drawArray(arr, highlights);
+            await sleep(animationSpeed);
+        }
+        
+        async function finishedAnimation() {
+            for (let i = 0; i < array.length; i++) {
+                drawArray(array, { comparing: true, i: i });
+                await sleep(10);
+            }
+            drawArray(array);
+        }
+
+        async function bubbleSort() {
+            let n = array.length;
+            for (let i = 0; i < n - 1; i++) {
+                for (let j = 0; j < n - i - 1; j++) {
+                    if (!isSorting) return;
+                    await updateAndDraw(array, { comparing: true, i: j, j: j + 1 });
+                    if (array[j] > array[j + 1]) {
+                        await updateAndDraw(array, { swapping: true, i: j, j: j + 1 });
+                        [array[j], array[j + 1]] = [array[j + 1], array[j]];
+                        await updateAndDraw(array, { swapping: true, i: j, j: j + 1 });
+                    }
+                }
+            }
+        }
+
+        async function selectionSort() {
+            let n = array.length;
+            for (let i = 0; i < n - 1; i++) {
+                let minIdx = i;
+                for (let j = i + 1; j < n; j++) {
+                    if (!isSorting) return;
+                    await updateAndDraw(array, { comparing: true, i: minIdx, j: j });
+                    if (array[j] < array[minIdx]) {
+                        minIdx = j;
+                    }
+                }
+                await updateAndDraw(array, { swapping: true, i: i, j: minIdx });
+                [array[i], array[minIdx]] = [array[minIdx], array[i]];
+                await updateAndDraw(array, { swapping: true, i: i, j: minIdx });
+            }
+        }
+
+        async function insertionSort() {
+            let n = array.length;
+            for (let i = 1; i < n; i++) {
+                let key = array[i];
+                let j = i - 1;
+                while (j >= 0 && array[j] > key) {
+                    if (!isSorting) return;
+                    await updateAndDraw(array, { comparing: true, i: j, j: j + 1 });
+                    array[j + 1] = array[j];
+                    j = j - 1;
+                }
+                array[j + 1] = key;
+                await updateAndDraw(array, { swapping: true, i: i, j: j + 1 });
+            }
+        }
+        
+        async function mergeSort(arr = array, l = 0, r = arr.length - 1) {
+            if (l >= r) {
+                return;
+            }
+            if (!isSorting) return;
+            const m = l + Math.floor((r - l) / 2);
+            await mergeSort(arr, l, m);
+            await mergeSort(arr, m + 1, r);
+            await merge(arr, l, m, r);
+        }
+
+        async function merge(arr, l, m, r) {
+            let n1 = m - l + 1;
+            let n2 = r - m;
+            let L = new Array(n1);
+            let R = new Array(n2);
+            for (let i = 0; i < n1; i++) L[i] = arr[l + i];
+            for (let j = 0; j < n2; j++) R[j] = arr[m + 1 + j];
+            let i = 0, j = 0, k = l;
+            while (i < n1 && j < n2) {
+                 if (!isSorting) return;
+                await updateAndDraw(array, { comparing: true, i: l+i, j: m+1+j });
+                if (L[i] <= R[j]) {
+                    arr[k] = L[i]; i++;
+                } else {
+                    arr[k] = R[j]; j++;
+                }
+                await updateAndDraw(array, { swapping: true, i:k });
+                k++;
+            }
+            while (i < n1) { arr[k] = L[i]; i++; k++; await updateAndDraw(array); }
+            while (j < n2) { arr[k] = R[j]; j++; k++; await updateAndDraw(array); }
+        }
+
+        async function quickSort(arr = array, low = 0, high = arr.length - 1) {
+             if (!isSorting) return;
+            if (low < high) {
+                let pi = await partition(arr, low, high);
+                await quickSort(arr, low, pi - 1);
+                await quickSort(arr, pi + 1, high);
+            }
+        }
+        
+        async function partition(arr, low, high) {
+            let pivot = arr[high];
+            let i = low - 1;
+            await updateAndDraw(array, { pivot: high });
+            for (let j = low; j < high; j++) {
+                if (!isSorting) return -1;
+                await updateAndDraw(array, { comparing: true, i: j, j: high });
+                if (arr[j] < pivot) {
+                    i++;
+                    await updateAndDraw(array, { swapping: true, i: i, j: j });
+                    [arr[i], arr[j]] = [arr[j], arr[i]];
+                    await updateAndDraw(array, { swapping: true, i: i, j: j });
+                }
+            }
+            await updateAndDraw(array, { swapping: true, i: i + 1, j: high });
+            [arr[i + 1], arr[high]] = [arr[high], arr[i + 1]];
+            await updateAndDraw(array, { swapping: true, i: i + 1, j: high });
+            return i + 1;
+        }
+
+        async function heapSort() {
+            let n = array.length;
+            for (let i = Math.floor(n / 2) - 1; i >= 0; i--) {
+                await heapify(array, n, i);
+            }
+            for (let i = n - 1; i > 0; i--) {
+                if (!isSorting) return;
+                await updateAndDraw(array, { swapping: true, i: 0, j: i });
+                [array[0], array[i]] = [array[i], array[0]];
+                await updateAndDraw(array, { swapping: true, i: 0, j: i });
+                await heapify(array, i, 0);
+            }
+        }
+
+        async function heapify(arr, n, i) {
+            let largest = i;
+            let l = 2 * i + 1;
+            let r = 2 * i + 2;
+            await updateAndDraw(array, { pivot: i });
+            if (l < n && arr[l] > arr[largest]) largest = l;
+            if (r < n && arr[r] > arr[largest]) largest = r;
+            if (largest !== i) {
+                await updateAndDraw(array, { swapping: true, i: i, j: largest });
+                [arr[i], arr[largest]] = [arr[largest], arr[i]];
+                await updateAndDraw(array, { swapping: true, i: i, j: largest });
+                await heapify(arr, n, largest);
+            }
+        }
+
+        function populateUI(algoName) {
+            const data = ALGO_DATA[algoName];
+            document.getElementById('algo-title').textContent = algoName;
+            document.getElementById('algo-concept').textContent = data.concept;
+            document.getElementById('time-complexity').textContent = data.time;
+            document.getElementById('space-complexity').textContent = data.space;
+            document.getElementById('stability').textContent = data.stability;
+            document.getElementById('in-place').textContent = data.inplace;
+
+            const prosList = document.getElementById('algo-pros');
+            prosList.innerHTML = '';
+            data.pros.forEach(pro => {
+                const li = document.createElement('li');
+                li.textContent = pro;
+                prosList.appendChild(li);
+            });
+
+            const consList = document.getElementById('algo-cons');
+            consList.innerHTML = '';
+            data.cons.forEach(con => {
+                const li = document.createElement('li');
+                li.textContent = con;
+                consList.appendChild(li);
+            });
+
+            document.getElementById('algo-usecases').textContent = data.usecases;
+        }
+
+        function handleNavClick(e) {
+            const algoName = e.target.dataset.algo;
+            if (algoName) {
+                if (isSorting) {
+                    stopSorting();
+                }
+                currentAlgorithm = algoName;
+                document.querySelectorAll('.nav-button').forEach(btn => btn.classList.remove('active'));
+                e.target.classList.add('active');
+                populateUI(currentAlgorithm);
+            }
+        }
+
+        function initNav() {
+            Object.keys(ALGO_DATA).forEach(name => {
+                const btn = document.createElement('button');
+                btn.textContent = name;
+                btn.dataset.algo = name;
+                btn.className = 'nav-button py-2 px-4 rounded-lg transition-all duration-200 hover:bg-indigo-100';
+                if (name === currentAlgorithm) {
+                    btn.classList.add('active');
+                }
+                algoNav.appendChild(btn);
+            });
+            algoNav.addEventListener('click', handleNavClick);
+        }
+
+        function stopSorting() {
+            isSorting = false;
+            sortBtn.textContent = 'Urutkan';
+            sortBtn.classList.replace('bg-red-600', 'bg-indigo-600');
+            sortBtn.classList.replace('hover:bg-red-700', 'hover:bg-indigo-700');
+            resetBtn.disabled = false;
+        }
+        
+        async function startSorting() {
+            if (isSorting) {
+                stopSorting();
+                return;
+            }
+            
+            isSorting = true;
+            sortBtn.textContent = 'Hentikan';
+            sortBtn.classList.replace('bg-indigo-600', 'bg-red-600');
+            sortBtn.classList.replace('hover:bg-indigo-700', 'hover:bg-red-700');
+            resetBtn.disabled = true;
+
+            const sortFunction = ALGO_DATA[currentAlgorithm].sort;
+            await sortFunction();
+            
+            if (isSorting) { // If it wasn't stopped manually
+                await finishedAnimation();
+                stopSorting();
+            } else {
+                 drawArray(array);
+            }
+        }
+
+        function reset() {
+            if (isSorting) return;
+            generateArray();
+            drawArray(array);
+        }
+
+        window.addEventListener('resize', () => {
+            setupCanvas();
+            drawArray(array);
+        });
+        
+        sortBtn.addEventListener('click', startSorting);
+        resetBtn.addEventListener('click', reset);
+        
+        // Initialize
+        setupCanvas();
+        generateArray();
+        drawArray(array);
+        initNav();
+        populateUI(currentAlgorithm);
+
+    </script>
+</body>
+</html>
